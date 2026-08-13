@@ -1,0 +1,200 @@
+// ERP Flow Harness 웹앱 데이터 모델.
+// state-schema.md §2/§7/§8의 필드 정의를 그대로 테이블화한다.
+// 규칙(열 매핑/정규화/중복판정/회수예정일 파싱)은 이 스키마가 아니라 코드(lib/pipeline)와
+// state-schema.md가 기준이며, 이 파일은 그 결과를 담는 저장 구조만 정의한다.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// state-schema.md §7 processed_files.json 대응
+model ProcessedFile {
+  id                 String    @id @default(cuid())
+  fileHash           String    @unique
+  fileName           String
+  sizeBytes          Int
+  kind               String? // §3의 4개 값 중 하나. 매핑 실패 시 null
+  sheet              String?
+  headerRow          Int?
+  dataStartRow       Int?
+  rowCount           Int?
+  uploadedAt         DateTime  @default(now())
+  processedAt        DateTime?
+  txAdded            Int       @default(0)
+  txSkippedDuplicate Int       @default(0)
+  status             String // processed | skipped_duplicate | rejected
+  anomalies          Json      @default("[]")
+
+  @@index([status])
+}
+
+// state-schema.md §8 transactions.json 대응. append-only로만 다룬다(원본 수정 없음).
+model Transaction {
+  id           String   @id @default(cuid())
+  txKey        String
+  seq          Int
+  kind         String
+  side         String // 매출 | 매입
+  date         String // YYYY-MM-DD
+  month        String // YYYY-MM
+  place        String
+  amount       Int? // 파싱 실패/공백은 null. 0으로 채우지 않음(§5)
+  proj         String
+  use          String
+  content      String
+  evidence     String
+  payer        String?
+  settleDate   String? // YYYY-MM-DD. §6
+  settleMethod String?
+  noteRaw      String? // 비고 열 원문. 형식 불일치 시에도 보존(§6)
+  memo         String  @default("") // 메모 열 원문. 비어있지 않으면 classify.ts가 검수로 보낸다
+  sourceFile   String
+  sourceRow    Int
+  fileHash     String
+  ingestedAt   DateTime @default(now())
+
+  reviewDecision ReviewDecision?
+
+  @@unique([txKey, seq])
+  @@index([month])
+  @@index([proj])
+  @@index([side])
+}
+
+// classify-skill 결과. 규칙으로 딱 맞으면 auto_confirmed, 애매하면 needs_review로 남기고
+// 사람이 /review 화면에서 confirmed/excluded/modified/hold로 갱신한다.
+model ReviewDecision {
+  id                String    @id @default(cuid())
+  transactionId     String    @unique
+  transaction       Transaction @relation(fields: [transactionId], references: [id])
+  // 값은 lib/classify.ts가 유일하게 만든다(예외: app/api/review/route.ts, app/api/memo/route.ts가
+  // 같은 문자열을 직접 대입하는 경로가 있다 — webapp/CLAUDE.md 참고). 실제 값 8개:
+  // 금액 누락 | 인건비 | 메모 확인 필요 | 일반관리비 | 미매칭(확인 필요 항목) | 정상 | 미매칭(공백) | 예정일 확인 필요
+  problemType       String
+  suggestion        String? // 규칙 근거 또는 LLM 제안 텍스트(참고용, 자동 확정 근거 아님)
+  suggestedCategory String?
+  status            String    @default("needs_review") // auto_confirmed | needs_review | confirmed | excluded | modified | hold
+  resolvedCategory  String?
+  note              String?
+  decidedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  // /memo 화면에서 "확인함"을 누른 시각. 손익/분류는 바꾸지 않고 확인 여부만 기록한다
+  // (확인해도 목록에서 제거하지 않고 흐리게 표시만 함).
+  memoAcknowledgedAt DateTime?
+
+  @@index([status])
+  @@index([problemType])
+}
+
+// 일반관리비 사전 등록 목록 + 간이영수증 place 키워드 매핑.
+// classify-skill의 "자동 처리 허용 조건"을 만족하는 규칙만 여기 등록한다.
+model AdminCategoryRule {
+  id       String @id @default(cuid())
+  matchOn  String // "proj" | "place_keyword" | "flag_review" | "memo_keyword"
+  pattern  String
+  category String
+
+  @@unique([matchOn, pattern])
+}
+
+// 회수 캘린더에 사람이 직접 추가한 일정(calendar-chatbot-skill의 "사용자 캘린더 수정 입력").
+// 확정/예정 판정은 저장하지 않고, 거래 레코드와 동일하게 date와 오늘 날짜를 비교해 매번 계산한다.
+model ManualCalendarEntry {
+  id        String   @id @default(cuid())
+  date      String // YYYY-MM-DD
+  label     String // 거래처/설명
+  amount    Int
+  side      String   @default("매출") // 매출 | 매입
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// 월간 리포트의 편집 가능한 요약 문구 + 확정 상태. 리포트 자체는 항상 다시 계산하고,
+// 이 표는 "요약 문구를 사람이 고쳤는가/확정했는가"만 별도로 기억한다.
+model MonthlyReportState {
+  month       String    @id // YYYY-MM
+  summaryText String
+  confirmedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+}
+
+// ===== L2 마스터 (작업 1-a) =====
+// 대출/자산/프로젝트 마스터 데이터. Transaction과 달리 upsert로 다룬다(대출 이율이
+// 바뀌면 갱신되어야 함) — 파일 해시 1차 방어선을 적용하지 않는다(같은 파일 재업로드 = 갱신).
+
+model Loan {
+  id           String    @id @default(cuid())
+  loanCode     String    @unique
+  bank         String
+  loanType     String
+  principal    BigInt
+  annualRate   Float? // 연이율(%). null 허용 — 더미에 의도적 공백 1건(L03). 0으로 채우지 않는다
+  startDate    DateTime
+  endDate      DateTime
+  repayMethod  String // 만기일시 | 원금균등 | 원리금균등 | 이자만
+  scope        String // 전사 | 프로젝트
+  projectName  String?
+  note         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Asset {
+  id            String   @id @default(cuid())
+  assetCode     String   @unique
+  name          String
+  account       String
+  acquireDate   DateTime
+  acquireCost   BigInt
+  usefulYears   Int
+  depMethod     String
+  residualValue Int
+  scope         String // 전사 | 프로젝트
+  projectName   String?
+  monthlyDep    Int
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// projectName은 Transaction.proj와 조인되는 키다. 띄어쓰기까지 원문 그대로 저장한다(trim만 허용).
+model Project {
+  id           String    @id @default(cuid())
+  projectCode  String    @unique
+  projectName  String    @unique
+  category     String // 공사 | 공통비 | 인별경비
+  client       String?
+  contractAmt  BigInt?
+  startDate    DateTime?
+  endDate      DateTime?
+  location     String?
+  status       String?
+  isAutoAdded  Boolean   @default(false)
+  firstSeenAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ===== L3 파생원가 그릇 (작업 1-a) — 계산은 1-b에서 한다 =====
+// Transaction에는 절대 append하지 않는다. 원본 거래는 append-only로 보존하고,
+// 파생원가는 매 실행마다 runId 단위로 전량 재생성한다(계산 로직 바뀌면 재계산).
+model DerivedCost {
+  id         String   @id @default(cuid())
+  runId      String
+  yearMonth  String // "2026-01"
+  costType   String // 이자 | 감가상각 | 인건비
+  projectName String? // null이면 전사 미배부
+  amount     BigInt
+  basis      String // 계산 근거 텍스트
+  sourceCode String? // loanCode / assetCode
+  createdAt  DateTime @default(now())
+
+  @@index([runId, yearMonth])
+  @@index([projectName])
+}

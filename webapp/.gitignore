@@ -1,0 +1,43 @@
+# 파일 무시 규칙에 대해 더 알고 싶으면: https://help.github.com/articles/ignoring-files/
+
+# 의존성
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# 테스트
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# 프로덕션
+/build
+
+# 기타
+.DS_Store
+*.pem
+
+# 디버그
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 환경변수 파일 (필요하면 커밋하도록 예외 처리 가능)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+/generated/prisma
