@@ -30,8 +30,8 @@ final-assembly 단계에서 앞 단계 결과를 한눈에 보기 좋게 묶어 
 - 필요 시 중복 제외 원칙을 적용해 같은 월 데이터 추가 유입에 대응한다.
 - 분석 결과는 이번에 들어온 파일만이 아니라 누적 거래 기준으로 정리한다.
 - 파일별 열 이름 차이는 `state-schema.md` §3의 매핑표로 흡수하고, 이후 단계는 공통 거래 레코드만 다룬다.
-- 거래 추출이 끝나면 거래 데이터를 `data/state/transactions.json`에 넣고, 추가/스킵/전체 누적 건수를 함께 남긴다.
-- 파일 처리가 끝나면 파일명, 원본 경로, 처리 시점, 파일 해시를 `data/state/processed_files.json`에 남긴다.
+- 거래 추출이 끝나면 거래 데이터를 누적 보관하고(`Transaction` 테이블, `state-schema.md` §8), 추가/스킵/전체 누적 건수를 함께 남긴다.
+- 파일 처리가 끝나면 파일명, 원본 경로, 처리 시점, 파일 해시를 파일 처리 기록에 남긴다(`ProcessedFile` 테이블, `state-schema.md` §7).
 - `비고` 열에서 회수/결제 예정일을 파싱해 `settle_date`로 남긴다(`state-schema.md` §6). 캘린더 단계가 이 값을 쓴다.
 - 일반관리비 후보도 누적 거래 기준으로 다시 본다.
 - 출력: 프로젝트별 손익, 월별 손익, 일반관리비 분류 결과, 분석 시점, 기준 파일 정보, 매칭 결과/신규 프로젝트 후보, 거래 누적 보관 결과, 파일 처리 기록
@@ -70,12 +70,9 @@ final-assembly 단계에서 앞 단계 결과를 한눈에 보기 좋게 묶어 
 - 각 단계의 진행 상황과 짧은 결과를 보여주고, 마지막에 최종 결과를 보기 좋게 정리해 출력한다.
 - 최종 결과, 실행 요약, 검사 결과를 모아 사용자에게 보여준다.
 - 결과 확인 화면, 겉보기 결과 정리, 다음 액션 안내를 제공한다.
-- 최종 결과에는 웹에서 볼 수 있는 결과물 파일이 함께 나온다.
-- 웹 결과물 파일은 브라우저에서 바로 열리는 한 개 파일로 만든다.
-- 웹 결과물 파일은 매번 새 시점 파일명으로 새로 만든다(`out/erp-flow-result-<YYYYMMDD-HHMM>.html`).
-- final-assembly가 끝나면 notion-export-agent가 같은 요약을 고정 노션 페이지("씨웨이테크 대시보드")에 덮어써 동기화한다. 검색으로 못 찾으면 재검색을 한 번 더 하고, 그래도 없으면 새 페이지를 만들어 이어간다. 절차·범위는 `notion-export-skill`이 기준이다.
-- 동일 제목 페이지가 2건 이상 매칭되는 경우만 이상 항목으로 남고, 나머지 결과 출력은 그대로 진행한다.
-- 출력: 결과 확인 화면, 겉보기 결과 정리, 다음 액션 안내, 웹 결과물 파일, 노션 동기화 상태
+- 최종 결과는 웹에서 바로 조회할 수 있는 화면(webapp)으로 나온다. 정적 파일을 새로 만들지 않고,
+  매 요청마다 최신 데이터로 다시 계산해 보여준다(`webapp/README.md` 참고).
+- 출력: 결과 확인 화면, 겉보기 결과 정리, 다음 액션 안내
 
 ## 3. 자동 검사/검증 배치 지점
 - 업로드 직후
@@ -95,12 +92,11 @@ final-assembly 단계에서 앞 단계 결과를 한눈에 보기 좋게 묶어 
 
 - 각 단계는 끝나면 다음 단계로 결과를 바로 넘겨야 한다.
 - file-input이 끝나면 analyze로 넘기고, analyze가 끝나면 중간 확인 없이 바로 classify로 넘기고, classify가 끝나면 query-export로 넘기고, query-export가 끝나면 calendar-chatbot으로 넘기고, calendar-chatbot이 끝나면 verify로 넘기고, verify가 끝나면 final-assembly로 넘긴다.
-- final-assembly는 앞 단계 결과를 모두 모아 최종 결과 형식으로 정리하고 웹 결과물 파일을 생성한다.
-- final-assembly 결과는 notion-export-agent로도 이어져, 같은 요약이 고정 노션 페이지에 동기화된다(§2 8), §7-4).
+- final-assembly는 앞 단계 결과를 모두 모아 최종 결과 형식으로 정리해 웹 화면(webapp)에 보여준다.
 - 단계별 결과를 중간 저장했다가 다시 읽는 방식보다, 순서대로 넘겨서 바로 이어지게 처리한다(상태 파일은 예외).
 - 각 단계의 노출 범위는 `SPEC.md` §3을 따른다.
 - 한 번의 업로드+명령으로 끝까지 이어지게 만든다.
-- 처음 명령 이후에는 단계별 재요청이나 중간 확인 없이 순차 실행으로 끝까지 이어간다. file-input → analyze → classify → query-export → calendar-chatbot → verify → final-assembly → notion-export까지 이어서 결과를 만들고, 최종 결과를 한 번에 보여준다.
+- 처음 명령 이후에는 단계별 재요청이나 중간 확인 없이 순차 실행으로 끝까지 이어간다. file-input → analyze → classify → query-export → calendar-chatbot → verify → final-assembly까지 이어서 결과를 만들고, 최종 결과를 한 번에 보여준다.
 
 ## 6. 최종 산출물과 최종 결과 형식
 - 최종 결과에는 아래 항목이 한 번에 포함된다.
@@ -116,55 +112,9 @@ final-assembly 단계에서 앞 단계 결과를 한눈에 보기 좋게 묶어 
 - 검수 필요 목록이 있으면 검수 목록으로 이동했다고 표시하고, 대표 예시도 함께 보이게 한다.
 - 검증 이상이 있으면 이상 항목/원인/조치 안내/재시도·안내 필요 여부를 최종 결과에 포함한다.
 
-## 7. 웹 결과물 생성 규칙(고정)
-
-final-assembly(오케스트레이터가 직접 수행)가 만드는 웹 결과물 HTML(`out/erp-flow-result-<YYYYMMDD-HHMM>.html`)은 아래 규칙을 항상 따른다.
-이 절이 웹 결과물 HTML 생성 규칙의 단일 기준이다. 하나라도 어기면 챗봇이 동작하지 않거나 파일을 열 수 없다.
-
-### 7-1. 저장 위치
-- 웹 결과물 HTML은 `out/` 폴더(§6, `orchestrator.md` §7)에 저장한다.
-- Downloads, Desktop, Documents 계열 폴더에는 저장하지 않는다.
-
-### 7-2. head 인코딩
-- `<head>` 안에 `<meta charset="utf-8">`을 반드시 포함한다.
-- 한글 깨짐을 막기 위한 필수 선언이다.
-
-### 7-3. body 끝 고정 스크립트
-- `</body>` 바로 앞에 아래 고정 스크립트를 항상 넣는다.
-
-```html
-<script>
-window.PNL_CHAT_MODEL = "qwen2.5:3b";
-window.DASHBOARD_DATA = {
-  /* 이 화면에 표시한 요약 숫자를 그대로 담는다 */
-};
-</script>
-<script src="http://localhost:8000/pnl-chat.js"></script>
-```
-
-- `src`는 위 절대 주소를 그대로 쓴다.
-- `./pnl-chat.js` 같은 상대 경로로 바꾸지 않는다.
-
-### 7-4. window.DASHBOARD_DATA 작성 규칙
-1. 화면에 표시한 숫자와 반드시 일치시킨다. 화면에 없는 값을 추가하지 않고, 화면에 있는 값을 빠뜨리지 않는다.
-2. 키 이름은 한국어로, 화면의 표 제목·열 이름과 같게 쓴다.
-3. 숫자는 쉼표·단위 없는 순수 숫자로 넣는다.
-4. 최상단에 `단위`와 `기준일`을 명시한다.
-5. 차트가 있더라도 원본 값을 요약 수준으로 넣는다.
-6. 원본 거래 내역 전체는 넣지 않는다. 요약 수준만 넣는다(`SPEC.md` §3 결과 노출 정책과 같은 방향).
-
-### 7-5. 하지 말아야 할 것
-- `pnl-chat.js`를 새로 만들거나 수정하지 않는다.
-- HTML 안에 챗봇 UI나 LLM 호출 코드를 직접 작성하지 않는다.
-- 챗봇 연결은 `<script src="http://localhost:8000/pnl-chat.js"></script>` 한 줄로만 한다.
-
-### 7-6. 열어보는 방식
-- 저장된 웹 결과물 HTML은 §7-3의 고정 스크립트가 붙어 있어, `http://localhost:8000`에서 `pnl-chat.js`를 서빙하는 로컬 서버가 켜진 상태로 열면 챗봇이 붙은 상태로 열람된다.
-- 로컬 서버가 꺼져 있으면 화면은 정상 출력되지만 챗봇만 동작하지 않는다.
-
-## 8. 재현 방법
-- 이 Harness 폴더 안의 skills/, agents/, data/, hooks/, SPEC.md, role-table.md, orchestrator.md, workflow.md, agents.md, state-schema.md를 함께 본다.
+## 7. 재현 방법
+- 이 Harness 폴더 안의 skills/, agents/, data/, hooks/, SPEC.md, role-table.md, orchestrator.md, workflow.md, agents.md, state-schema.md와 실제 구현체인 webapp/를 함께 본다.
 - 데이터 폴더에 실제 ERP 파일 또는 데모용 파일을 넣고, 업로드/접수부터 같은 순서로 실행하면 흐름이 재현된다.
 - 검증 기준은 verify-agent/verify-skill이 담당하며, 반복 실행 시에도 같은 기준으로 점검한다.
 - 업로드 후 첫 명령 이후 다시 묻지 않고 끝까지 이어지고, analyze가 끝나면 바로 classify로 넘어가며, final-assembly에서 앞 단계 결과를 모아 최종 결과를 한 번에 보여주는 흐름을 재현할 수 있어야 한다.
-- final-assembly 이후 notion-export-agent가 고정 노션 페이지("씨웨이테크 대시보드")를 같은 요약으로 덮어써 갱신하는 것까지 재현할 수 있어야 한다. 검색 실패 시 재검색 1회 후 새 페이지 생성까지 재현되어야 하며, 동일 제목 2건 이상 매칭 시에만 이상 항목으로 남는다(§2 8), `notion-export-skill`).
+- 웹 화면·집계·챗봇 구현의 세부 규칙은 `webapp/README.md`가 기준이다.

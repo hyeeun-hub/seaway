@@ -11,16 +11,15 @@
 
 ---
 
-## 1. 파일 위치
+## 1. 상태 저장소
 
-```
-data/state/transactions.json      # 거래 누적 보관
-data/state/processed_files.json   # 파일 단위 처리 기록(재처리 방지)
-```
-
-- 두 파일은 analyze 단계가 읽고 쓴다. 다른 단계는 읽기만 한다.
-- 파일이 없으면 빈 상태(`version: 1`, 빈 배열)로 생성한다.
-- 쓰기는 임시 파일에 기록한 뒤 원자적으로 교체한다. 중간에 실패하면 이전 상태가 남는다.
+이 문서가 정의하는 두 논리적 스키마는 `transactions.json`(거래 누적 보관)과
+`processed_files.json`(파일 단위 처리 기록, 재처리 방지)이다. 이름은 원 설계의 파일명을
+그대로 쓰지만, **실제 구현체(`webapp/`)에서는 JSON 파일이 아니라 Postgres 테이블로
+존재한다** — `transactions.json` → `Transaction` 테이블(§8), `processed_files.json` →
+`ProcessedFile` 테이블(§7, `webapp/prisma/schema.prisma`). analyze 단계(웹앱에서는
+`lib/pipeline/ingest.ts`)가 쓰고, 다른 단계는 읽기만 한다. append-only 원칙과 아래
+필드 정의는 저장소가 파일이든 DB든 동일하게 적용된다.
 
 ---
 
@@ -195,6 +194,9 @@ analyze 단계는 매 실행마다 아래 3개 수치를 남기고 최종 결과
 
 ## 7. processed_files.json
 
+**구현 매핑**: `webapp/prisma/schema.prisma`의 `ProcessedFile` 테이블로 구현돼 있다. 필드 정의는
+아래가 그대로 기준이고, 저장소만 JSON 파일 대신 Postgres 테이블이다.
+
 ```json
 {
   "version": 1,
@@ -234,6 +236,10 @@ analyze 단계는 매 실행마다 아래 3개 수치를 남기고 최종 결과
 
 ## 8. transactions.json
 
+**구현 매핑**: `webapp/prisma/schema.prisma`의 `Transaction` 테이블로 구현돼 있다. 필드 정의는
+아래가 그대로 기준이고, 저장소만 JSON 파일 대신 Postgres 테이블이다. append-only 원칙(아래)은
+`Transaction` 테이블에도 그대로 적용된다 — update/delete 없이 insert만 한다.
+
 ```json
 {
   "version": 1,
@@ -270,8 +276,8 @@ analyze 단계는 매 실행마다 아래 3개 수치를 남기고 최종 결과
 
 ## 9. 성공 기준
 
-- [ ] `data/state/` 아래 두 파일이 생성되며, JSON으로 파싱된다
-- [ ] `transactions.json`의 모든 레코드가 `tx_key`, `seq`, `kind`, `date`, `source_row`를 가진다
+- [ ] `Transaction`/`ProcessedFile` 테이블(webapp 구현체 기준)이 생성되고 채워진다
+- [ ] `Transaction`의 모든 레코드가 `tx_key`, `seq`, `kind`, `date`, `source_row`를 가진다
 - [ ] 같은 파일을 두 번 업로드하면 두 번째는 `status = "skipped_duplicate"`이고 `tx_added = 0`이다
 - [ ] 2026-02-12 아시아나항공 85,400원 3건이 `seq` 1/2/3으로 **모두** 누적된다(합계 256,200원)
 - [ ] 2026-04-08 `창조이엔지` 21,489,886원이 매출/매입 **2건**으로 누적된다(하나로 합쳐지지 않는다)

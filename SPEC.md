@@ -13,7 +13,7 @@
 | 에이전트별 역할·입출력·연결 | `role-table.md` |
 | 실행 순서, 단계 간 연결, final-assembly | `orchestrator.md` |
 | 단계별 흐름과 트리거 | `workflow.md` |
-| 웹 결과물 HTML 생성 규칙(저장 위치·인코딩·챗봇 연동 고정 스크립트) | `workflow.md` §7 |
+| 웹 화면·집계·챗봇 구현(실제 구현체) | `webapp/README.md` |
 | 운영 지침(자동 처리 범위, 사람 개입 지점) | `agents.md` |
 | 스킬별 절차·예시·성공 기준 | `skills/<name>/SKILL.md` |
 | 에이전트 frontmatter·반환 계약·경계 | `agents/erp-flow-<name>-agent.md` |
@@ -64,7 +64,7 @@
 - 결과 생성/조회: 프로젝트별 손익, 월별 손익, 월간 리포트 조회/생성용 준비
 - 캘린더/챗봇/요약: 확정 계약 자동 반영, 예정 계약 관리, 챗봇 응답, 실행 요약/상태
 - 자동 검사/검증: 단계별 자동 검사, 최종 무결성 확인, 이상 원인/조치 안내
-- 최종 결과 확인/겉보기: 결과 확인, 겉보기 결과 정리, 다음 액션 안내, 고정 노션 페이지 동기화
+- 최종 결과 확인/겉보기: 결과 확인, 겉보기 결과 정리, 다음 액션 안내
 
 ### 자동 검사/검증 배치
 - 마지막 한 번만 하지 않는다.
@@ -105,7 +105,7 @@
 | 노출 | 단계명 + 진행 상태 + 핵심 수치 1~2개. 단계당 최대 2줄 |
 | 비노출 | 거래 단위 상세, 중간 계산 과정, 규칙 판정 근거, 단계별 전체 산출물 |
 | 즉시 노출(예외) | 검증에서 이상이 발견되면 그 시점에 이상 유형과 조치 방향을 1~2줄로 표시 |
-| 최종 노출 | final-assembly에서 §최종 결과 8개 항목 + 웹 결과물 파일 |
+| 최종 노출 | final-assembly에서 §최종 결과 8개 항목을 웹 화면(webapp)에 정리 |
 
 문서에서 말하는 "중간 결과 비노출"은 **상세 산출물을 노출하지 않는다**는 뜻이며, 진행 상황 표시를 금지하는 뜻이 아니다. 두 표현이 충돌하는 것처럼 보이면 이 표가 기준이다.
 
@@ -139,7 +139,7 @@
 - 입력: 업로드 파일/참조 정보, 프로젝트 목록/규칙, 분석 설정/규칙, 업로드 시점
 - 출력: 프로젝트별 손익, 월별 손익, 일반관리비 분류 결과, 분석 시점, 기준 파일 정보, 매칭 결과/신규 프로젝트 후보, 거래 누적 보관 결과, 파일 처리 기록, 이상/주의 항목
 - 실행 조건: 파일 입력/관리 처리 완료 후 실행
-- 산출물: 프로젝트별 손익, 월별 손익, 일반관리비 분류 결과, 분석 시점, 기준 파일 정보, 매칭 결과/신규 프로젝트 후보, `transactions.json`/`processed_files.json` 갱신
+- 산출물: 프로젝트별 손익, 월별 손익, 일반관리비 분류 결과, 분석 시점, 기준 파일 정보, 매칭 결과/신규 프로젝트 후보, 거래/파일 처리 기록 갱신(`Transaction`/`ProcessedFile` 테이블, `state-schema.md` §7·§8)
 
 ### classify-skill
 - 목적: 불확실 거래 분리, 문제 유형/처리 방법 정리, 확정/제외/수정/보류 구분, 검수 목록 생성
@@ -151,7 +151,7 @@
 ### query-export-skill
 - 목적: 프로젝트별 손익, 월별 손익 조회, 월간 리포트 생성/조회
 - 입력: 조회 조건, 리포트 요청, 선택 월/시점, 분석/검수 결과
-- 출력: 프로젝트별 손익 화면 데이터, 월별 손익 화면 데이터, 월간 리포트, 기준 월/합계/프로젝트별 표/전월 대비 증감/요약 문구/생성 시점/기준 정보, 웹 결과물 파일 생성용 정보
+- 출력: 프로젝트별 손익 화면 데이터, 월별 손익 화면 데이터, 월간 리포트, 기준 월/합계/프로젝트별 표/전월 대비 증감/요약 문구/생성 시점/기준 정보, 화면 표시용 정보
 - 실행 조건: 분석/검수 결과 준비 후 실행, 조회/생성 요청 시 동작
 - 산출물: 프로젝트별 손익/월별 손익 조회용 데이터, 월간 리포트, 기준 정보 및 생성 시점
 
@@ -169,13 +169,6 @@
 - 실행 조건: 각 단계 종료 후, 최종 결과 생성 후 다시 실행
 - 산출물: 단계별 검사 결과, 이상 항목 목록, 상태 요약, 재시도/안내 필요 여부
 
-### notion-export-skill
-- 목적: final-assembly 최종 결과 요약을 고정 노션 페이지("씨웨이테크 대시보드")에 덮어써 동기화
-- 입력: final-assembly 최종 결과 요약값, 생성 시점/기준 정보, 고정 페이지 식별 정보
-- 출력: 동기화 상태(성공/실패), 갱신된 페이지 정보, 새 페이지 생성 여부, 동기화 시점, 실패 시 이상 항목
-- 실행 조건: final-assembly 완료 후 실행. 검색(1차) → 0건 시 재검색(2차) → 그래도 0건이면 새 페이지 생성. 2건 이상 매칭 시에만 중단
-- 산출물: 노션 페이지 갱신 결과. 검색 재시도까지 실패했을 때만 예외적으로 새 페이지 생성
-
 ---
 
 ## 5. 에이전트 명세 요약
@@ -188,17 +181,33 @@
 | file-input-agent | 파일 접수·저장·정리, 중복 확인, 업로드 시점 기록 | file-input-skill | 다음: analyze / 협력: verify |
 | analyze-agent | 파싱·정규화·매칭·손익·월별 집계·일반관리비 분류, 누적 보관 | analyze-skill | 다음: classify / 협력: query-export, calendar-chatbot, verify |
 | classify-agent | 확인 필요 거래 분리, 문제 유형/처리 방법, 확정·제외·수정·보류 | classify-skill | 다음: query-export / 협력: calendar-chatbot, verify |
-| query-export-agent | 프로젝트별·월별 손익 조회, 월간 리포트, 웹 결과물 생성용 정보 | query-export-skill | 협력: calendar-chatbot, verify |
+| query-export-agent | 프로젝트별·월별 손익 조회, 월간 리포트, 웹 화면(webapp) 표시용 정보 | query-export-skill | 협력: calendar-chatbot, verify |
 | calendar-chatbot-agent | 회수 캘린더, 챗봇 응답, 실행 요약/상태 | calendar-chatbot-skill | 협력: query-export, verify |
 | verify-agent | 6개 지점 자동 검사, 최종 무결성, 이상 시 검수 연결 | verify-skill | 전체 흐름 중간/끝 |
-| final-assembly | 최종 결과 8개 항목 조립, 웹 결과물 파일 생성 | — (오케스트레이터 직접 수행) | 다음: notion-export-agent |
-| notion-export-agent | 최종 결과 요약을 고정 노션 페이지에 덮어써 동기화 | notion-export-skill | 흐름의 마지막 |
+| final-assembly | 최종 결과 8개 항목 조립, 웹 화면(webapp)에 정리 | — (오케스트레이터 직접 수행) | 흐름의 마지막 |
 
 **입출력과 결과 전달 방식은 이 표에 중복 기술하지 않는다.** `role-table.md`를 본다.
 
 ---
 
 ## 6. 자동 검사/검증 기준
+
+### 검증 지점(6개)과 예외 처리 원칙
+
+자동 검사는 아래 6개 지점에서 반복 실행된다. `after_file_input` / `after_analyze` /
+`after_classify` / `after_query_export` / `after_calendar_chatbot`은 실제 구현체
+`webapp/lib/verify.ts`의 `point` 필드 값과 문자 그대로 일치한다 — 문서와 코드가 같은 이름을
+쓰므로 어떤 검사가 어느 지점에서 도는지 코드에서 바로 확인할 수 있다.
+
+`after_final_result`(최종 결과 생성 후 최종 무결성 점검)는 아래 "최종 무결성" 절의 개념적
+지점이며, 현재 `lib/verify.ts` 코드에는 별도 `point` 값으로 분리돼 있지 않다 — 해당 검사들
+(정합성 검산 A/B/C 등)은 코드상 `after_query_export`로 태그돼 있다. 문서와 코드가 이 지점만
+어긋나 있음을 그대로 남긴다(검사 결과를 숨기지 않는다는 원칙과 같은 이유로, 문서 상태도
+숨기지 않는다).
+
+예외 처리 원칙: 파일 읽기 실패, 필수 열 누락, 파싱/정규화 이상, 집계 불일치, 검수 누락 의심,
+결과 불일치가 발생하면 원인/조치/재시도·안내 필요 여부를 남기고, 검사 결과를 그대로 끝내지
+않고 검수/분류 단계로 넘길 수 있게 연결한다(§7과 동일 원칙).
 
 ### 파일 접수 단계
 - 파일 존재/읽힘 여부
@@ -246,6 +255,8 @@
 
 이 Harness는 아래 구조로 재현할 수 있게 구성한다.
 
+이 트리는 실제 저장소 구조와 일치한다(문서층 + 실제 구현체 `webapp/`).
+
 ```
 erp-flow-harness/
   SPEC.md                  # 이 문서. 문제정의·단계·검증 기준·폴더 구성
@@ -253,7 +264,7 @@ erp-flow-harness/
   orchestrator.md          # 실행 순서와 단계 간 연결
   workflow.md              # 단계별 흐름과 트리거
   agents.md                # 운영 지침
-  state-schema.md          # 정규화·열 매핑·중복 판정·상태 파일 스키마
+  state-schema.md          # 정규화·열 매핑·중복 판정·상태 파일 스키마(구현 매핑 포함)
   skills/
     file-input-skill/SKILL.md
     analyze-skill/SKILL.md
@@ -261,7 +272,6 @@ erp-flow-harness/
     query-export-skill/SKILL.md
     calendar-chatbot-skill/SKILL.md
     verify-skill/SKILL.md
-    notion-export-skill/SKILL.md
     skill-reviewer/SKILL.md      # 개발 보조. ERP 흐름에는 참여하지 않는다
   agents/
     erp-flow-file-input-agent.md
@@ -270,20 +280,32 @@ erp-flow-harness/
     erp-flow-query-export-agent.md
     erp-flow-calendar-chatbot-agent.md
     erp-flow-verify-agent.md
-    erp-flow-notion-export-agent.md
   data/
     매출_세금계산서_*.xls
     매입(세금계산서)_*.xls
     매입(간이영수증)_*.xls
     매입(국세_지방세)_*.xls
-    state/
-      transactions.json          # 실행 시 생성
-      processed_files.json       # 실행 시 생성
+    대출마스터_*.xlsx / 자산마스터_*.xlsx / 프로젝트마스터_*.xlsx / 급여대장_*.xls / 4대보험조회_*.xls
   hooks/
-    settings.json
-    subagent_log.sh
-  out/
-    erp-flow-result-<YYYYMMDD-HHMM>.html   # 실행 시 생성
+    subagent_log.sh           # 훅 이벤트를 logs/erp-flow.log에 기록
+  .claude/
+    settings.json             # 실제로 발동하는 Claude Code 훅 설정(SubagentStop 등)
+  logs/
+    erp-flow.log               # 훅이 기록하는 실행 로그(gitignore 대상, 실행 시 생성)
+  webapp/                     # 실제 구현체 — Next.js 16 + Prisma + Postgres. 유일하게 실행되는 코드
+    app/                      # 라우트: 대시보드/프로젝트별손익/월별추이/수주판단/일반관리비/캘린더/검수/메모/리포트/설정
+    components/
+    lib/
+      pipeline/                # 파일 해시·종류 판별·파싱·정규화·txKey → file-input/analyze 대응
+      classify.ts              # classify-skill 대응
+      aggregate.ts             # query-export-skill 대응
+      calendar.ts / gemini.ts  # calendar-chatbot-skill 대응
+      verify.ts                # verify-skill 대응
+    prisma/
+      schema.prisma            # state-schema.md 필드 정의를 테이블로 구현
+      migrations/
+      seed.ts
+    README.md                  # 웹 화면·집계·챗봇 구현 규칙의 기준 문서
 ```
 
 **명명 규칙**

@@ -104,7 +104,7 @@ description: ERP 엑셀 파일을 실제로 파싱·정규화하고, 프로젝�
 ### 처리하는 것
 - `state-schema.md` §3 매핑표에 따른 열 해석과 §5 정규화
 - `(tx_key, seq)` 산출 및 거래 단위 중복 판정(2차 방어선)
-- `transactions.json` / `processed_files.json` 갱신
+- 거래/파일 처리 기록 갱신(`Transaction`/`ProcessedFile` 테이블, `state-schema.md` §7·§8)
 - 프로젝트/현장 매칭, 프로젝트별 손익, 월별 집계, 일반관리비 후보 분류
 - `비고` 열에서 `settle_date` / `settle_method` 파싱
 
@@ -121,7 +121,7 @@ description: ERP 엑셀 파일을 실제로 파싱·정규화하고, 프로젝�
 판단이 필요한 지점(무엇이 문제인가)은 classify로 완전히 분리돼 있다.
 
 ### 제약
-- 원본 거래를 수정하지 않는다. `transactions.json`은 append-only
+- 원본 거래를 수정하지 않는다. `Transaction` 테이블은 append-only
 - 규칙만으로 확정할 수 없으면 결론을 만들지 않고 `use`/`proj`를 원문 그대로 남긴다
 
 ---
@@ -201,7 +201,7 @@ processed_files: 4건 갱신
 
 ## 성공 기준
 
-- [ ] 869건 전량이 `transactions.json`에 누적되고, `tx_added + tx_skipped_duplicate = 869`이 성립한다
+- [ ] 869건 전량이 `Transaction` 테이블에 누적되고, `tx_added + tx_skipped_duplicate = 869`이 성립한다
 - [ ] 2026-02-12 아시아나항공 85,400원 3건이 `seq` 1/2/3으로 모두 남는다(합계 256,200원)
 - [ ] 2026-04-08 `창조이엔지` 21,489,886원이 매출/매입 2건으로 남고, 손익이 0으로 계산된다
 - [ ] 2026-01 원천세 금액 공백 1건이 `amount: null`로 남고 0으로 채워지지 않는다

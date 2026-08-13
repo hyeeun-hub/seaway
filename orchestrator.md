@@ -19,8 +19,7 @@
 - file-input → analyze → classify → query-export → calendar-chatbot → verify → final-assembly → 최종 결과 순서를 관리한다.
 - 한 단계가 끝나면 재요청이나 중간 확인 없이 바로 다음 단계를 시작한다.
 - 특히 analyze가 끝나면 중간 확인 없이 바로 classify로 넘어가 검수 대상을 정리한다.
-- final-assembly에서 앞 단계 결과를 모아 최종 결과를 8개 항목으로 한 번에 정리해 보여주고, 웹 결과물 파일을 생성한다.
-- final-assembly가 끝나면 notion-export-agent로 이어져, 같은 요약을 고정 노션 페이지에 동기화한다(§3, §7).
+- final-assembly에서 앞 단계 결과를 모아 최종 결과를 8개 항목으로 한 번에 정리해 웹 화면(webapp)에 보여준다.
 - 진행 표시는 `SPEC.md` §3 범위 안에서 하되, 흐름 자체는 끊기지 않게 이어간다.
 
 즉, 오케스트레이터는
@@ -49,11 +48,10 @@
 5. query-export-agent: 프로젝트별 손익, 월별 손익, 월간 리포트 조회/생성용 결과 준비
 6. calendar-chatbot-agent: 회수 캘린더, 챗봇 응답, 실행 요약/상태 정리
 7. verify-agent: 파일/분석/검수/결과 단계 자동 검사, 최종 무결성 점검, 이상 시 검수 연결
-8. final-assembly(오케스트레이터 직접 수행): 앞 단계 결과를 모두 모아 최종 결과 형식으로 정리, 웹 결과물 파일 생성
-9. notion-export-agent: final-assembly 요약을 고정 노션 페이지("씨웨이테크 대시보드")에 덮어써 동기화. 검색 실패 시 재검색 1회 후 새 페이지 생성. 동일 제목 2건 이상 매칭 시에만 이상으로 남긴다
-10. 최종 결과 출력: 8개 항목 + 웹 결과물 파일 + 노션 동기화 상태를 한 번에 보여준다.
+8. final-assembly(오케스트레이터 직접 수행): 앞 단계 결과를 모두 모아 최종 결과 형식으로 정리, 웹 화면(webapp)에 표시
+9. 최종 결과 출력: 8개 항목을 한 번에 보여준다.
 
-verify는 8단계 흐름 안의 7번 자리에만 있는 것이 아니라, `hooks/settings.json`이 정의한 6개 지점
+verify는 8단계 흐름 안의 7번 자리에만 있는 것이 아니라, `SPEC.md` §6이 정의한 6개 지점
 (`after_file_input`, `after_analyze`, `after_classify`, `after_query_export`, `after_calendar_chatbot`, `after_final_result`)에서 반복 실행된다.
 
 ---
@@ -68,8 +66,7 @@ verify는 8단계 흐름 안의 7번 자리에만 있는 것이 아니라, `hook
 - query-export가 끝나면 calendar-chatbot으로 넘긴다.
 - calendar-chatbot이 끝나면 verify로 넘긴다.
 - verify가 끝나면 final-assembly로 넘긴다.
-- final-assembly에서는 앞 단계 결과를 모아 최종 결과로 정리한다.
-- final-assembly가 끝나면 notion-export-agent로 넘겨, 같은 요약을 고정 노션 페이지에 동기화한다. 흐름의 마지막 연결이다.
+- final-assembly에서는 앞 단계 결과를 모아 최종 결과로 정리한다. 흐름의 마지막 연결이다.
 
 연결 방식은 아래 기준을 기본으로 한다.
 
@@ -119,8 +116,8 @@ final-assembly는 오케스트레이터 흐름의 마지막 묶음이며, **오�
 별도 에이전트나 스킬을 두지 않는다. 6개 에이전트는 자기 결과를 넘기는 것까지가 책임이다.
 
 - file-input, analyze, classify, query-export, calendar-chatbot, verify 결과를 모아 최종 결과로 정리한다.
-- 웹 결과물 파일을 `out/erp-flow-result-<YYYYMMDD-HHMM>.html`로 생성한다. 브라우저에서 바로 열리는 한 개 파일이며, 매번 새 시점 파일명으로 새로 만든다.
-- HTML의 저장 위치·인코딩·챗봇 연동 고정 스크립트 등 생성 세부 규칙은 `workflow.md` §7이 기준이다. 이 문서에서 다시 정의하지 않는다.
+- 최종 결과는 웹 화면(webapp)에서 매 요청마다 다시 계산해 보여준다. 정적 파일을 새로 만들지 않는다.
+- 웹 화면 구현의 세부 규칙은 `webapp/README.md`가 기준이다. 이 문서에서 다시 정의하지 않는다.
 - 최종 결과에는 아래 8개 항목이 한 번에 포함된다.
   1. 파일 접수 요약
   2. 프로젝트별 손익
@@ -132,10 +129,7 @@ final-assembly는 오케스트레이터 흐름의 마지막 묶음이며, **오�
   8. 다음 액션 안내
 
 final-assembly는 중간 계산 과정이나 단계별 세부 흔적을 길게 드러내지 않고,
-앞 단계 결과를 한눈에 보기 좋게 묶는 데 집중한다.
-
-final-assembly가 끝나면 notion-export-agent가 이어받아, 같은 최종 결과 요약을 고정 노션 페이지("씨웨이테크 대시보드")에 덮어써 동기화한다.
-이 동기화는 별도 에이전트(`erp-flow-notion-export-agent.md`)의 책임이며, final-assembly 자신은 노션 연동을 직접 하지 않는다.
+앞 단계 결과를 한눈에 보기 좋게 묶는 데 집중한다. 이것이 흐름의 마지막 단계다.
 
 ---
 
@@ -189,8 +183,7 @@ final-assembly가 끝나면 notion-export-agent가 이어받아, 같은 최종 �
 - 업로드 + 명령 한 번으로 흐름이 시작된다.
 - 첫 명령 이후에는 다시 묻지 않고 끝까지 이어진다.
 - analyze가 끝나면 바로 classify로 넘어간다.
-- final-assembly에서 앞 단계 결과가 최종 결과 8개 항목 + 웹 결과물 파일로 정리된다.
-- final-assembly 이후 notion-export-agent가 같은 요약으로 고정 노션 페이지를 갱신한다. 검색이 실패하면 재검색 1회 후 새 페이지를 만들어 이어가며, 동일 제목이 2건 이상 매칭될 때만 이상으로 남는다.
+- final-assembly에서 앞 단계 결과가 최종 결과 8개 항목으로 정리되어 웹 화면(webapp)에 나온다.
 - 진행 표시와 최종 노출은 `SPEC.md` §3 기준을 따른다.
 
 이 기준이 유지되면,

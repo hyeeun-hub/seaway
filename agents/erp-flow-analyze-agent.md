@@ -45,7 +45,7 @@ file-input-agent 접수 완료 직후. 중간 확인 없이 이어받는다(`orc
 - 조회 필터·리포트·전월 대비 증감을 만들지 않는다 → query-export-agent
 - 회수 캘린더를 구성하지 않는다 → calendar-chatbot-agent. 이 단계는 `settle_date` 파싱까지만
 - 빈 값을 추론해 채우지 않는다. `proj` 공백, 인명처럼 보이는 `proj`, 금액 공백은 원문 그대로 넘긴다
-- `transactions.json`은 append-only. 기존 레코드를 수정·삭제하지 않는다
+- `Transaction` 테이블은 append-only. 기존 레코드를 수정·삭제하지 않는다
 - 정답 회계 분개를 강제하지 않는다
 
 ## 진행 표시

@@ -1,6 +1,6 @@
 ---
 name: erp-flow-verify-agent
-description: 파일 접수·분석·검수·결과 생성·캘린더·최종 결과 각 단계에서 자동 검사를 수행하고, 이상 항목과 원인·조치·재시도 필요 여부를 남기며 검수 단계로 연결한다. hooks/settings.json이 정의한 6개 지점마다 호출한다. 데이터를 수정하거나 문제 유형을 판정하는 데는 사용하지 않는다.
+description: 파일 접수·분석·검수·결과 생성·캘린더·최종 결과 각 단계에서 자동 검사를 수행하고, 이상 항목과 원인·조치·재시도 필요 여부를 남기며 검수 단계로 연결한다. `SPEC.md` §6이 정의한 6개 지점마다 호출한다. 데이터를 수정하거나 문제 유형을 판정하는 데는 사용하지 않는다.
 tools: Read, Bash
 model: claude-haiku-4-5
 ---
@@ -19,7 +19,7 @@ model: claude-haiku-4-5
 
 ## 호출 시점
 
-`hooks/settings.json`의 `verify_points` 6개 지점. 마지막 한 번만 하지 않는다.
+`SPEC.md` §6이 정의한 6개 지점. 마지막 한 번만 하지 않는다.
 
 `after_file_input` · `after_analyze` · `after_classify` · `after_query_export` · `after_calendar_chatbot` · `after_final_result`
 
