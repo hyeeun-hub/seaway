@@ -139,3 +139,37 @@ test("proj 있음 + 특이사항 없음 → 정상 자동확정", () => {
   assert.equal(r.problemType, PROBLEM_TYPE.NORMAL);
   assert.equal(r.status, "auto_confirmed");
 });
+
+// use_account: 매입-세금계산서의 '용도' 열에 이미 적힌 계정과목을 그대로 옮기는 최종 분기.
+// problemType이 "일반관리비"로 새면 안 된다는 단언이 핵심이다 — classify.ts:134-138
+// 주석에 남은 실제 사고(현장 원가가 일반관리비로 조용히 빠지는 것)와 같은 모양의 회귀를 막는다.
+test("use_account 규칙과 정확히 일치 → suggestedCategory만 채워지고 problemType은 정상 그대로", () => {
+  const rules = [{ matchOn: "use_account", pattern: "자재비", category: "자재비" }];
+  const r = classifyTransaction(
+    baseInput({ kind: "매입-세금계산서", proj: "추자 예초 해상부유구조물", use: "자재비" }),
+    rules,
+  );
+  assert.equal(r.problemType, PROBLEM_TYPE.NORMAL);
+  assert.equal(r.suggestedCategory, "자재비");
+  assert.equal(r.status, "auto_confirmed");
+});
+
+test("use_account 미등록 값(예: 거래 구분 라벨 '매입')이면 suggestedCategory는 null 유지", () => {
+  const rules = [{ matchOn: "use_account", pattern: "자재비", category: "자재비" }];
+  const r = classifyTransaction(
+    baseInput({ kind: "매입-세금계산서", proj: "아무현장", use: "매입" }),
+    rules,
+  );
+  assert.equal(r.problemType, PROBLEM_TYPE.NORMAL);
+  assert.equal(r.suggestedCategory, null);
+});
+
+test("use_account 규칙이 있어도 간이영수증(use/content 공백) 경로는 그대로다(isReceiptBlank가 먼저 걸림)", () => {
+  const rules = [{ matchOn: "use_account", pattern: "자재비", category: "자재비" }];
+  const r = classifyTransaction(
+    baseInput({ kind: "매입-간이영수증", proj: "2026도두항부잔교설치공사", place: "미매칭사용처" }),
+    rules,
+  );
+  assert.equal(r.problemType, PROBLEM_TYPE.NORMAL);
+  assert.equal(r.suggestedCategory, "미분류");
+});

@@ -30,7 +30,7 @@
 | `query-export-skill` / `query-export-agent` | `lib/aggregate.ts`(프로젝트별/월별 손익, 일반관리비 분류) |
 | `calendar-chatbot-skill` / `calendar-chatbot-agent` | `lib/calendar.ts`(캘린더), `lib/gemini.ts` + `app/api/chat`(챗봇) |
 | `verify-skill` / `verify-agent` | `lib/verify.ts` |
-| final-assembly(오케스트레이터) | `app/page.tsx` — 8개 항목을 실시간 대시보드 한 화면에 조립 |
+| final-assembly(오케스트레이터) | 8개 결과 항목을 한 화면에 모으지 않고 화면별로 분리했다 — `app/page.tsx`(KPI·추이·업로드), `app/projects`, `app/monthly`, `app/admin-costs`, `app/review`, `app/calendar`, `app/settings`(검사 결과 탭), `app/reports` |
 
 규칙으로 딱 맞는 것만 자동 처리하고(`classifyTransaction`), 애매한 건은 `ReviewDecision.status = needs_review`로
 남겨 `/review` 화면에서 사람이 확정/제외/수정/보류한다. 간이영수증처럼 규칙 사전에 없는 사용처는
@@ -38,7 +38,7 @@
 
 ## 화면 구성
 
-사이드바 기준 8개 화면. 모두 서버 컴포넌트에서 `lib/aggregate.ts`/`lib/calendar.ts`/`lib/verify.ts`를
+사이드바 기준 10개 화면. 모두 서버 컴포넌트에서 `lib/aggregate.ts`/`lib/calendar.ts`/`lib/verify.ts`를
 직접 호출해 매 요청마다 다시 계산한다(별도 요약 API 없음).
 
 | 경로 | 화면 |
@@ -46,11 +46,13 @@
 | `/` | 대시보드 — KPI 카드, 최근 6개월 추이, 업로드, 상위/적자 프로젝트, 이번 달 회수 예정 |
 | `/projects` | 프로젝트별 손익 전체 표 |
 | `/monthly` | 월별 추이 전체 차트 + 표 |
+| `/quote` | 수주 판단 — 투찰가 시뮬레이터. `DerivedCost`(파생원가) 기준 월 고정비가 필요하며, 아직 계산 전이면 `/settings`의 재계산 버튼으로 안내한다 |
 | `/admin-costs` | 일반관리비 분류 결과 |
 | `/calendar` | 회수 캘린더 |
 | `/review` | 검수 대상(문제 유형별 필터 + 페이지네이션) |
+| `/memo` | 메모 확인 — 위험 키워드가 걸린 메모 확인/해제 |
 | `/reports` | 월간 리포트(기준월 선택, 전월 대비, 요약 문구) |
-| `/settings` | `AdminCategoryRule` 추가/삭제(일반관리비 항목·간이영수증 키워드·확인 필요 등록값) |
+| `/settings` | `AdminCategoryRule` 추가/삭제, 파생원가(인건비·이자·감가상각) 재계산 실행(`/api/derived-cost/recompute`), 검사 결과 |
 
 ## 디자인/UI 의존성
 

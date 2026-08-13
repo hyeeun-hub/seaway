@@ -27,7 +27,7 @@
 - `lib/aggregate.ts:200` — `getUnclassifiedResidual()`에서 `MEMO_NEEDS_REVIEW` 제외
 - `lib/calendar.ts:54,145` — `GENERAL_ADMIN`/`MEMO_NEEDS_REVIEW` 비교로 통과거래·캘린더 노출 판정
 - `lib/verify.ts:87,153,288` — 검사 조건 자체가 이 값과 정확히 일치해야 동작한다
-- `components/MemoRow.tsx:35`, `components/ReviewRow.tsx:212` — 클라이언트 컴포넌트지만
+- `components/MemoRow.tsx:36`, `components/ReviewRow.tsx:213` — 클라이언트 컴포넌트지만
   `lib/problemTypes.ts`는 순수 상수 파일(서버 의존성 없음)이라 그대로 import해서 쓴다
 
 **실제로 있었던 사고, 지금은 고쳤고 테스트로 막아뒀다**: `lib/verify.ts:100`이 한때
@@ -61,7 +61,7 @@ insert한다. 같은 입력이면 항상 같은 결과가 나와야 한다(난�
 
 ## 자동 확정은 값 비교로만
 
-`lib/classify.ts:3-6`의 "자동 처리 허용 조건" 3원칙: (1) 값 비교만으로 판정, (2) 재실행해도
+`lib/classify.ts:4-7`의 "자동 처리 허용 조건" 3원칙: (1) 값 비교만으로 판정, (2) 재실행해도
 같은 결과, (3) 오판정이면 verify가 잡을 수 있음. 문맥 추론(예: "이 이름은 사람 이름처럼
 보인다")은 규칙화하지 않고 `needs_review`로 남긴다. `suggestion` 필드(LLM 제안 텍스트)는
 참고용이며 그 자체로 확정 근거가 아니다 — 자동 확정 여부는 항상 규칙(값 비교) 결과다.

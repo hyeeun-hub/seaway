@@ -196,10 +196,21 @@ export function classifyTransaction(
     };
   }
 
+  // 앞의 어느 분기에도 안 걸린 정상 거래. 원본 '용도' 열에 계정과목이 이미 적혀 있는
+  // 경우(AdminCategoryRule matchOn: "use_account")만 그 값을 그대로 옮긴다 — 추론/정규화
+  // 없이 원문 그대로다. tx.use !== "" 조건은 방어용이다: pattern=""을 등록하면 안 되지만,
+  // 혹시 등록되더라도 공백 use가 전부 매칭되는 사고를 코드에서도 막는다.
+  const useAccountMatch =
+    tx.use !== ""
+      ? rules.find((r) => r.matchOn === "use_account" && r.pattern === tx.use)
+      : undefined;
+
   return {
     status: "auto_confirmed",
     problemType: PROBLEM_TYPE.NORMAL,
-    suggestedCategory: null,
-    suggestion: null,
+    suggestedCategory: useAccountMatch?.category ?? null,
+    suggestion: useAccountMatch
+      ? `원본 용도 열의 값("${tx.use}")을 그대로 사용(추론 없음)`
+      : null,
   };
 }

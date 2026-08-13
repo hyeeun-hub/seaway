@@ -27,6 +27,10 @@ model: claude-haiku-4-5
 
 file-input-agent 접수 완료 직후. 중간 확인 없이 이어받는다(`orchestrator.md` §4).
 
+**구현 매핑**: webapp에서는 별도 에이전트 호출이 아니라 `webapp/lib/pipeline/ingest.ts`의
+파싱/정규화/저장 로직이 이 역할을 맡고, 저장 직후 같은 함수 안에서 classify-agent 역할
+(`lib/classify.ts`)로 곧바로 이어진다(`orchestrator.md` 상단 구현 매핑 참고).
+
 ## 반환 계약
 
 | 항목 | 내용 |

@@ -94,6 +94,30 @@ const INDUSTRY_KEYWORD_RULES: { pattern: string; category: string }[] = [
   { pattern: "가스", category: "수도광열비" },
 ];
 
+// 매입-세금계산서의 원본 '용도' 열에 이미 적힌 계정과목명. 추론이 아니라 원문을 그대로
+// 인정 목록에 옮긴 것이다(값 자체는 바꾸지 않는다 — pattern과 category가 항상 같다).
+// 실데이터 141건의 use 분포 중 계정과목이 아닌 값은 제외했다:
+//   "매입"(58건) — 계정과목이 아니라 거래 구분 라벨이라 제외
+//   공백(5건) — 빈 pattern은 등록하지 않는다(등록하면 use 공백인 모든 거래가 매칭됨)
+// "기타비용"(14건)은 포함한다 — "비용"으로 끝나 원 작성자가 이미 비용 성격으로 구분해둔
+// 계정과목명이고("매입"처럼 거래 구분 라벨이 아님), 다른 항목들과 같은 층위의 값이라 임의로
+// 빼면 오히려 자재비/운반비 등과 다른 기준을 적용하는 셈이 된다.
+const USE_ACCOUNT_RULES: { pattern: string; category: string }[] = [
+  { pattern: "전기료", category: "전기료" },
+  { pattern: "기타비용", category: "기타비용" },
+  { pattern: "자재비", category: "자재비" },
+  { pattern: "지급수수료", category: "지급수수료" },
+  { pattern: "외주비", category: "외주비" },
+  { pattern: "외주가공비", category: "외주가공비" },
+  { pattern: "복리후생비", category: "복리후생비" },
+  { pattern: "운반비", category: "운반비" },
+  { pattern: "외주/용역 인건비", category: "외주/용역 인건비" },
+  { pattern: "경상연구개발비", category: "경상연구개발비" },
+  { pattern: "장비임차료", category: "장비임차료" },
+  { pattern: "소모품비", category: "소모품비" },
+  { pattern: "임차료", category: "임차료" },
+];
+
 // 메모 중 손익 왜곡 위험(중복 계상, 타사 대납 등)이 있는 표현. 표본 12건에서 뽑은 초기값이고,
 // /memo 화면에서 사람이 [문제 있음]을 누를 때 새 표현을 추가로 등록할 수 있다.
 // category는 이 matchOn에서 쓰이지 않지만 스키마상 필수라 안내용 값만 넣는다.
@@ -137,8 +161,16 @@ async function main() {
     });
   }
 
+  for (const rule of USE_ACCOUNT_RULES) {
+    await prisma.adminCategoryRule.upsert({
+      where: { matchOn_pattern: { matchOn: "use_account", pattern: rule.pattern } },
+      update: { category: rule.category },
+      create: { matchOn: "use_account", pattern: rule.pattern, category: rule.category },
+    });
+  }
+
   console.log(
-    `시드 완료: proj ${ADMIN_PROJ_RULES.length}개, place_keyword ${PLACE_KEYWORD_RULES.length + INDUSTRY_KEYWORD_RULES.length}개(상호명 ${PLACE_KEYWORD_RULES.length} + 업종 ${INDUSTRY_KEYWORD_RULES.length}), memo_keyword ${MEMO_RISK_KEYWORD_RULES.length}개`,
+    `시드 완료: proj ${ADMIN_PROJ_RULES.length}개, place_keyword ${PLACE_KEYWORD_RULES.length + INDUSTRY_KEYWORD_RULES.length}개(상호명 ${PLACE_KEYWORD_RULES.length} + 업종 ${INDUSTRY_KEYWORD_RULES.length}), memo_keyword ${MEMO_RISK_KEYWORD_RULES.length}개, use_account ${USE_ACCOUNT_RULES.length}개`,
   );
 }
 

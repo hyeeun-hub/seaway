@@ -21,6 +21,10 @@ model: claude-haiku-4-5
 analyze-agent 완료 직후. **중간 확인 없이 바로 이어받는다** — 이 harness의 핵심 요구사항이다
 (`orchestrator.md` §4, `SPEC.md` §2).
 
+**구현 매핑**: webapp에서는 별도 호출이 아니라 `webapp/lib/pipeline/ingest.ts`가 거래를 저장한
+직후, 같은 함수 안에서 바로 `lib/classify.ts`의 `classifyTransaction()`을 부른다(`orchestrator.md`
+상단 구현 매핑 참고). "중간 확인 없음" 불변조건은 유지되지만 물리적으로 분리된 단계는 아니다.
+
 ## 반환 계약
 
 | 항목 | 내용 |

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const VALID_MATCH_ON = ["proj", "flag_review", "place_keyword", "memo_keyword"] as const;
+const VALID_MATCH_ON = ["proj", "flag_review", "place_keyword", "memo_keyword", "use_account"] as const;
 
 export async function GET() {
   const rules = await prisma.adminCategoryRule.findMany({ orderBy: [{ matchOn: "asc" }, { pattern: "asc" }] });
