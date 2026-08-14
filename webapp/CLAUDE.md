@@ -82,8 +82,10 @@ insert한다. 같은 입력이면 항상 같은 결과가 나와야 한다(난�
 
 `npm test`(`node:test` + `tsx --test`, 별도 러너 없음). DB 연결이 필요 없는 순수 함수만
 테스트한다 — `lib/classify.test.ts`(분기별 골든 케이스), `lib/problemTypeContract.test.ts`
-(계약 테스트), `lib/pipeline/txKey.test.ts`(`computeTxKey`/`assignSeq`). `classify.ts`나
-`problemTypes.ts`를 고치면 반드시 `npm test`를 돌린다.
+(계약 테스트), `lib/pipeline/txKey.test.ts`(`computeTxKey`/`assignSeq`), `lib/quoteSimulator.test.ts`
+(손익분기/왕복 검증, 입력값 0 에러 처리 — 예전에 `scripts/*.mjs`로 수동 실행하던 걸 정식
+테스트로 옮긴 것. DB 의존적인 실데이터 대조 검사는 이 원칙과 안 맞아 옮기지 않았다).
+`classify.ts`나 `problemTypes.ts`를 고치면 반드시 `npm test`를 돌린다.
 
 ## 스키마 변경 시
 
