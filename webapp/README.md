@@ -68,9 +68,21 @@ Tailwind 위에 다음 3개만 추가했다. Streamlit/NiceGUI 같은 별도 UI 
 npm install
 npx create-db@latest --env .env   # DATABASE_URL을 .env에 채워줌(임시 DB, claimUrl로 영구화 가능)
 npx prisma migrate dev
-npx prisma db seed                 # AdminCategoryRule 시드
+npx prisma db seed                 # AdminCategoryRule 시드 — 건너뛰면 안 된다(아래 참고)
 npm run dev
 ```
+
+> **⚠️ 시드는 파일 업로드보다 반드시 먼저 실행해야 한다.**
+>
+> 분류는 업로드하는 순간 한 번 계산되어 `ReviewDecision`에 저장된다. 규칙이 없는 상태에서 파일을
+> 올리면 "규칙에 안 걸림"으로 굳고, 나중에 시드를 넣어도 이미 저장된 판정은 **저절로 바뀌지 않는다.**
+>
+> 시드를 빠뜨리면 `사무실운영`·`공장운영` 같은 일반관리비 계정이 프로젝트(현장)로 잡혀서
+> 프로젝트 수와 손익이 달라진다(실측: 프로젝트 11개 → 21개).
+>
+> 이미 업로드한 뒤라면 시드를 실행하고 **전체 재분류**를 해야 반영된다 —
+> `/settings` 화면의 재분류 버튼 또는 `curl -X POST http://localhost:3000/api/reclassify`.
+> 사람이 `/review`에서 내린 확정·제외·수정·보류 결정은 재분류해도 덮어쓰지 않는다.
 
 `.env`에 `GEMINI_API_KEY`를 넣으면 챗봇이 활성화된다. 비워두면 대시보드는 정상 동작하고 챗봇 입력창만
 비활성화된다.

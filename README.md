@@ -55,7 +55,7 @@ npm run dev
 브라우저에서 `data/`의 엑셀 9개를 업로드하면 전체 파이프라인이 재현된다.
 `GEMINI_API_KEY`를 넣으면 챗봇도 활성화된다(비워두면 챗봇만 비활성, 나머지는 정상).
 
-테스트는 `npm test`(31개), 프로덕션 빌드 확인은 `npm run build`.
+테스트는 `npm test`(26개), 프로덕션 빌드 확인은 `npm run build`.
 
 ---
 
@@ -139,4 +139,4 @@ Next.js 16 · React 19 · Prisma 7 · PostgreSQL · Tailwind CSS 4 · recharts �
 
 ---
 
-Token Maxing · 씨웨이테크 기업 과제
+Token Maxxing · 씨웨이테크 기업 과제
