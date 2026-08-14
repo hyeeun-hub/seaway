@@ -170,7 +170,7 @@ export default async function DashboardPage({
             <span className="text-slate-500">변동비 기준 손익 {won(selectedProfit)}</span>
             <span className="text-slate-400">→</span>
             <span className={`font-semibold ${realProfitSelected < 0 ? "text-red-600" : "text-slate-900"}`}>
-              진짜 손익 {won(realProfitSelected)}
+              손익 {won(realProfitSelected)}
             </span>
           </span>
           <span className="flex items-center gap-1 text-xs text-slate-400 shrink-0">
@@ -198,7 +198,7 @@ export default async function DashboardPage({
             </div>
           </div>
           <div className="flex justify-between border-t border-slate-200 pt-1.5 font-semibold">
-            <span className="text-slate-900">진짜 손익</span>
+            <span className="text-slate-900">손익</span>
             <span className={realProfitSelected < 0 ? "text-red-600" : "text-slate-900"}>
               {won(realProfitSelected)}
             </span>
@@ -220,7 +220,7 @@ export default async function DashboardPage({
         }`}
       >
         <p className="font-medium">
-          {realProfitSelected < 0 ? "⚠️" : "ℹ️"} 진짜 손익 {won(realProfitSelected)}
+          {realProfitSelected < 0 ? "⚠️" : "ℹ️"} 손익 {won(realProfitSelected)}
         </p>
         <p className="mt-0.5">
           다음 공사에서 같은 일이 생기지 않게 →{" "}

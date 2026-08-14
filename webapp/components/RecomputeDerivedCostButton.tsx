@@ -43,7 +43,7 @@ export function RecomputeDerivedCostButton() {
           <p className="text-xs text-slate-400 mt-0.5">
             대출/자산 마스터, 급여대장·4대보험 거래를 기준으로 인건비·이자·감가상각을 다시
             계산합니다. 마스터 파일을 새로 올렸거나 값이 바뀌었을 때 눌러야 하며, 대시보드의
-            &quot;진짜 손익&quot;과 &quot;수주 판단&quot; 화면의 월 고정비가 이 값을 씁니다.
+            &quot;손익&quot;과 &quot;수주 판단&quot; 화면의 월 고정비가 이 값을 씁니다.
             매번 전량 재생성하며 기존 값을 이어 계산하지 않습니다.
           </p>
         </div>

@@ -97,8 +97,8 @@ export default async function MonthlyPage({
                 <th className="py-2 pr-4 font-medium text-right">변동비 기준 손익</th>
                 <th className="py-2 pr-4 font-medium text-right">이익률</th>
                 <th className="py-2 pr-4 font-medium text-right">파생원가</th>
-                <th className="py-2 pr-4 font-medium text-right">진짜 손익</th>
-                <th className="py-2 font-medium text-right">전월 대비(진짜 손익)</th>
+                <th className="py-2 pr-4 font-medium text-right">손익</th>
+                <th className="py-2 font-medium text-right">전월 대비(손익)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

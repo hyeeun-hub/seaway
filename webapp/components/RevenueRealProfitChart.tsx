@@ -57,7 +57,7 @@ function ChartTooltip({
         매출 <span className="font-medium text-slate-900">{won(d.revenueWon)}</span>
       </p>
       <p className={d.realProfitWon < 0 ? "text-red-600" : "text-blue-600"}>
-        진짜 손익 <span className="font-medium">{won(d.realProfitWon)}</span>
+        손익 <span className="font-medium">{won(d.realProfitWon)}</span>
       </p>
     </div>
   );
@@ -109,7 +109,7 @@ export function RevenueRealProfitChart({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PROFIT.pos }} />
-          진짜 손익(인건비·이자·감가상각 반영)
+          손익(인건비·이자·감가상각 반영)
         </span>
       </div>
       <ResponsiveContainer width="100%" height={260}>

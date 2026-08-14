@@ -224,7 +224,7 @@ export default async function ProjectsPage({
 
       <Card>
         <h2 className="text-sm font-semibold text-slate-900 mb-3">
-          전사 진짜 손익까지 이어보기 · {selectedMonth ? monthLabel(selectedMonth) : "—"} 기준 누적
+          전사 손익까지 이어보기 · {selectedMonth ? monthLabel(selectedMonth) : "—"} 기준 누적
         </h2>
         <div className="text-sm space-y-1.5 max-w-lg">
           <div className="flex justify-between">
@@ -266,7 +266,7 @@ export default async function ProjectsPage({
           </div>
 
           <div className="flex justify-between border-t border-slate-200 pt-1.5">
-            <span className="font-semibold text-slate-900">전사 진짜 손익</span>
+            <span className="font-semibold text-slate-900">전사 손익</span>
             <span className={`font-bold ${realCompanyProfit < 0 ? "text-red-600" : "text-slate-900"}`}>
               {won(realCompanyProfit)}
             </span>

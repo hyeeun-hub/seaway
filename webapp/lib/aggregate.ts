@@ -437,7 +437,7 @@ function classifyLaborBasis(basis: string): "laborDaily" | "laborSocial" | "labo
   return "laborSalary";
 }
 
-// 대시보드/월별 추이 차트에서 "변동비 기준 vs 진짜 손익" 두 계열을 그리기 위한 월별 파생원가.
+// 대시보드/월별 추이 차트에서 "변동비 기준 vs 손익" 두 계열을 그리기 위한 월별 파생원가.
 export async function getDerivedCostByMonth(): Promise<DerivedCostMonthRow[]> {
   const rows = await prisma.derivedCost.findMany();
   const byMonth = new Map<

@@ -240,7 +240,7 @@ export async function runVerifyChecks(): Promise<VerifyCheck[]> {
   // 검사 B: 파생원가 반영 검증. DerivedCost 원본 합계(raw)와 getDerivedCostSummary()의
   // 분류 합계(labor+interest+depreciation)가 같은지 먼저 확인한다(costType 문자열이
   // 하나라도 안 걸리면 raw 합계보다 작게 나와 조용히 누락된다). 그 다음 전사 손익에서
-  // 파생원가를 뺀 "진짜 손익"을 계산해 보고한다.
+  // 파생원가를 뺀 "손익"을 계산해 보고한다.
   const derivedRowsRaw = await prisma.derivedCost.findMany({ select: { amount: true } });
   const derivedTotalRaw = derivedRowsRaw.reduce((s, r) => s + r.amount, ZERO);
   const derivedSummaryB = await getDerivedCostSummary();
@@ -249,10 +249,10 @@ export async function runVerifyChecks(): Promise<VerifyCheck[]> {
   const realProfitB = grandTotalA - derivedTotalRaw;
   checks.push({
     point: "after_query_export",
-    item: "정합성 검산 B — 파생원가 반영(변동비 기준 손익 − 파생원가 = 진짜 손익)",
+    item: "정합성 검산 B — 파생원가 반영(변동비 기준 손익 − 파생원가 = 손익)",
     result: diffB === ZERO ? "통과" : "이상",
     detail:
-      `변동비 기준 손익 ${won(grandTotalA)} − 파생원가 합계 ${won(derivedTotalRaw)} = 진짜 손익 ${won(realProfitB)} ` +
+      `변동비 기준 손익 ${won(grandTotalA)} − 파생원가 합계 ${won(derivedTotalRaw)} = 손익 ${won(realProfitB)} ` +
       `(인건비 ${won(BigInt(derivedSummaryB.labor))} · 이자 ${won(BigInt(derivedSummaryB.interest))} · ` +
       `감가상각 ${won(BigInt(derivedSummaryB.depreciation))}) / raw 합계 대비 분류 합계 차액 ${won(diffB)}`,
     cause: diffB !== ZERO ? "DerivedCost.costType 값이 labor/interest/depreciation 분류에서 하나라도 안 걸림" : undefined,
